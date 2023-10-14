@@ -57,10 +57,29 @@ class CustomConv2DFunction(Function):
 
         #################################################################################
         # Fill in the code here
+        new_height = math.floor((input_feats.size(2) + 2 * padding - kernel_size) / stride + 1)
+        new_width = math.floor((input_feats.size(3) + 2 * padding - kernel_size) / stride + 1)
+
+        # unfold the input feature maps
+        unfolded_input = nn.Unfold(kernel_size=kernel_size, padding=ctx.padding, stride=ctx.stride)(input_feats)
+
+        # unfold the weight
+        unfolded_weight = weight.view(weight.size(0), -1)
+        unfolded_output = unfolded_weight.matmul(unfolded_input)
+
+        # add bias
+        transpose_unfolded_output = unfolded_output.transpose(0, 1)
+        for i in range(transpose_unfolded_output.size(0)):
+            transpose_unfolded_output[i] += bias[i]
+        unfolded_output = transpose_unfolded_output.transpose(0, 1)
+
+        # fold the output
+        output = nn.Fold(output_size=(new_height, new_width), kernel_size=(1, 1))(unfolded_output)
         #################################################################################
 
         # save for backward (you need to save the unfolded tensor into ctx)
         # ctx.save_for_backward(your_vars, weight, bias)
+        ctx.save_for_backward(unfolded_input, weight, bias)
 
         return output
 
@@ -80,6 +99,7 @@ class CustomConv2DFunction(Function):
         """
         # unpack tensors and initialize the grads
         # your_vars, weight, bias = ctx.saved_tensors
+        unfolded_input, weight, bias = ctx.saved_tensors
         grad_input = grad_weight = grad_bias = None
 
         # recover the conv params
@@ -91,6 +111,16 @@ class CustomConv2DFunction(Function):
 
         #################################################################################
         # Fill in the code here
+        unfold_grad_output = nn.Unfold(kernel_size=(1, 1))(grad_output)
+        unfolded_transpose_weight = weight.view(weight.size(0), -1).transpose(0, 1)
+
+        unfolded_grad_input = unfolded_transpose_weight.matmul(unfold_grad_output)
+        grad_input = nn.Fold(output_size=(input_height, input_width), kernel_size=kernel_size,
+                             padding=padding, stride=stride)(unfolded_grad_input)
+
+        unfold_grad_weight = unfold_grad_output.matmul(unfolded_input.transpose(1, 2))
+        grad_weight = unfold_grad_weight.sum(dim=0).view(weight.size())
+
         #################################################################################
         # compute the gradients w.r.t. input and params
 
