@@ -320,6 +320,10 @@ class SimpleViT(nn.Module):
 
         ########################################################################
         # Fill in the code here
+        self.patch_embed = PatchEmbed(
+
+        )
+
         ########################################################################
         # the implementation shall start from embedding patches,
         # followed by some transformer blocks
@@ -342,6 +346,7 @@ class SimpleViT(nn.Module):
     def forward(self, x):
         ########################################################################
         # Fill in the code here
+
         ########################################################################
         return x
 
