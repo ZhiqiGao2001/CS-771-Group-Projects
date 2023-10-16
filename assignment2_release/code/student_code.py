@@ -320,9 +320,16 @@ class SimpleViT(nn.Module):
 
         ########################################################################
         # Fill in the code here
+        # vision Transformer consists of multiple transformer blocks
         self.patch_embed = PatchEmbed(
-
+            kernel_size=(patch_size, patch_size),
+            stride=(patch_size, patch_size),
+            padding=(0, 0),
+            in_chans=in_chans,
+            embed_dim=embed_dim,
         )
+        self.norm = norm_layer(embed_dim)
+
 
         ########################################################################
         # the implementation shall start from embedding patches,
