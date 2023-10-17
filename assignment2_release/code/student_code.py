@@ -333,7 +333,7 @@ class SimpleViT(nn.Module):
         self.cls_token = nn.Parameter(torch.zeros(1, 1, 4, embed_dim))
         self.transformer = nn.ModuleList(
             [
-                Block(
+                TransformerBlock(
                     dim=embed_dim,
                     num_heads=num_heads,
                     mlp_ratio=mlp_ratio,
@@ -342,7 +342,6 @@ class SimpleViT(nn.Module):
                     norm_layer=norm_layer,
                     act_layer=act_layer,
                     window_size=window_size,
-                    window_block=idx in window_block_indexes,
                 )
                 for idx in range(depth)
             ]
