@@ -338,7 +338,7 @@ class SimpleViT(nn.Module):
                     num_heads=num_heads,
                     mlp_ratio=mlp_ratio,
                     qkv_bias=qkv_bias,
-                    drop=drop_path_rate,
+                    drop_path=drop_path_rate,
                     norm_layer=norm_layer,
                     act_layer=act_layer,
                     window_size=window_size,
