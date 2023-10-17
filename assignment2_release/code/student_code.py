@@ -330,7 +330,7 @@ class SimpleViT(nn.Module):
         )
         self.mlp_head = nn.Linear(embed_dim, num_classes)
         self.normalization = norm_layer(embed_dim)
-        self.cls_token = nn.Parameter(torch.zeros(1, 1, 4, embed_dim))
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, 8, embed_dim))
         self.transformer = nn.ModuleList(
             [
                 TransformerBlock(
@@ -346,7 +346,7 @@ class SimpleViT(nn.Module):
                 for idx in range(depth)
             ]
         )
-        self.pooling = nn.AdaptiveAvgPool2d((1, 1))
+        self.pooling = nn.AdaptiveAvgPool1d(1)
         ########################################################################
         # the implementation shall start from embedding patches,
         # followed by some transformer blocks
@@ -369,29 +369,18 @@ class SimpleViT(nn.Module):
     def forward(self, x):
         ########################################################################
         # Fill in the code here
-        # Step 1: Patch Embedding
-        x = self.patch_embed(x)  # Shape: [batch_size, num_patches, embed_dim]
-
-        # Step 2: Add Positional Embeddings (if enabled)
+        x = self.patch_embed(x)
         if self.pos_embed is not None:
             x = x + self.pos_embed
-
-        # Step 3: Add Classification Token
-        cls_token = self.cls_token.expand(x.shape[0], -1, -1, -1)  # Expand cls_token to match batch size
-        x = torch.cat((cls_token, x), dim=1)  # Concatenate cls_token with patch embeddings
-        # Now x has shape [batch_size, num_patches + 1, embed_dim]
-
-        # Step 4: Apply Transformer Blocks
+        cls_token = self.cls_token.expand(x.shape[0], -1, -1, -1)
+        x = torch.cat((cls_token, x), dim=1)
         for block in self.transformer:
             x = block(x)
-
+        x = x.mean(dim=1)
         x = self.normalization(x)
-
-        # Step 5: Global Average Pooling
-        x = self.pooling(x).squeeze(-1).squeeze(-1)  # Shape: [batch_size, embed_dim]
-
-        # Step 6: Apply MLP Head for Classification
-        x = self.mlp_head(x)  # Shape: [batch_size, num_classes]
+        x = self.pooling(x.transpose(1, 2))
+        x = x.squeeze(-1)
+        x = self.mlp_head(x)
         ########################################################################
         return x
 
