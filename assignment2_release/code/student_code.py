@@ -455,9 +455,19 @@ class PGDAttack(object):
         input.requires_grad = False
 
         # loop over the number of steps
-        # for _ in range(self.num_steps):
+        for _ in range(self.num_steps):
         #################################################################################
         # Fill in the code here
+            output.requires_grad_(True)
+            predictions = model(output)
+            target = torch.argmin(predictions, dim=1)
+            criterion = nn.CrossEntropyLoss()
+            loss = criterion(predictions, target)
+            loss.backward()
+
+            delta = self.step_size * output.grad.data.sign()
+            output.data = torch.clamp(output.data + delta, input-self.epsilon, input+self.epsilon)
+            output.grad.zero_()
         #################################################################################
 
         return output
@@ -498,6 +508,20 @@ class GradAttention(object):
 
         #################################################################################
         # Fill in the code here
+        predictions = model(input)
+        # method 1
+        target = torch.argmax(predictions, dim=1)
+        criterion = nn.CrossEntropyLoss()
+        loss = criterion(predictions, target)
+        loss.backward()
+        # method 2
+        # max_prob, _ = torch.max(predictions, dim=0)
+        # max_prob.backward(torch.ones(max_prob.shape, device=torch.device('cuda')))
+
+        gradients = input.grad
+        abs_gradients = torch.abs(gradients)
+        max_gradients, _ = torch.max(abs_gradients, dim=1)
+        output = max_gradients.reshape(max_gradients.shape[0], 1, max_gradients.shape[1], max_gradients.shape[2])
         #################################################################################
 
         return output
