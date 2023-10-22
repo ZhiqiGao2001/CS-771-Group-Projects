@@ -218,6 +218,7 @@ def main(args):
 
     # tensorboard writer
     log_folder = os.path.join("../logs", log_folder)
+    log_folder = log_folder.replace(":", "_")
     writer = SummaryWriter(log_folder)
     model_folder = os.path.join(log_folder, 'models')
     os.makedirs(model_folder, exist_ok=True)
