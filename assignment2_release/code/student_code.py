@@ -454,11 +454,12 @@ class PGDAttack(object):
         output = input.clone()
         input.requires_grad = False
 
+        output.requires_grad = True
         # loop over the number of steps
         for _ in range(self.num_steps):
         #################################################################################
         # Fill in the code here
-            output.requires_grad_(True)
+            # output.requires_grad_(True)
             predictions = model(output)
             target = torch.argmin(predictions, dim=1)
             criterion = nn.CrossEntropyLoss()
@@ -466,7 +467,7 @@ class PGDAttack(object):
             loss.backward()
 
             delta = self.step_size * output.grad.data.sign()
-            output.data = torch.clamp(output.data + delta, input-self.epsilon, input+self.epsilon)
+            output.data = torch.clamp(output.data - delta, input-self.epsilon, input+self.epsilon)
             output.grad.zero_()
         #################################################################################
 
