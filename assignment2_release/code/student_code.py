@@ -244,13 +244,19 @@ class SimpleNet(nn.Module):
 
     def forward(self, x):
         # you can implement adversarial training here
-        # if self.training:
-        #   # generate adversarial sample based on x
+        if self.training:
+            self.training=False
+            PGD = PGDAttack(nn.CrossEntropyLoss(), num_steps=10)
+            adverserialImage = PGD.perturb(self, input=x)
+            self.training=True
+            x = adverserialImage
+        self.zero_grad()
         x = self.features(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         return x
+    
 
 
 class SimpleViT(nn.Module):
@@ -451,24 +457,39 @@ class PGDAttack(object):
           output: (torch tensor) an adversarial sample of the given network
         """
         # clone the input tensor and disable the gradients
-        output = input.clone()
+        output = input.clone().detach()
         input.requires_grad = False
 
-        output.requires_grad = True
         # loop over the number of steps
         for _ in range(self.num_steps):
         #################################################################################
         # Fill in the code here
-            # output.requires_grad_(True)
+            output = output.detach().requires_grad_(True)
             predictions = model(output)
             target = torch.argmin(predictions, dim=1)
-            criterion = nn.CrossEntropyLoss()
-            loss = criterion(predictions, target)
+            #print(target)
+
+            #print(predictions)
+            #criterion = nn.CrossEntropyLoss()
+            loss = self.loss_fn(predictions, target)
+
             loss.backward()
 
-            delta = self.step_size * output.grad.data.sign()
-            output.data = torch.clamp(output.data - delta, input-self.epsilon, input+self.epsilon)
-            output.grad.zero_()
+            gradient = output.grad.detach()
+
+            gradient = gradient.sign()
+
+            with torch.no_grad():
+                
+                delta = self.step_size * gradient
+            
+                output = torch.clamp(output - delta, input-self.epsilon, input+self.epsilon)
+
+                output = output.detach()
+
+            #output.grad.zero_()
+
+            #output = output.detach()
         #################################################################################
 
         return output
