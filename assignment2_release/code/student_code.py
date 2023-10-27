@@ -257,7 +257,119 @@ class SimpleNet(nn.Module):
         x = self.fc(x)
         return x
     
+class OurSimpleNet(nn.Module):
+    # a simple CNN for image classifcation
+    def __init__(self, conv_op=nn.Conv2d, num_classes=100):
+        super(OurSimpleNet, self).__init__()
+        # you can start from here and create a better model
+        self.features = nn.Sequential(
+            # conv1 block: conv 7x7
+            conv_op(3, 32, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            conv_op(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            # max pooling 1/2
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            # conv2 block: simple bottleneck
+            conv_op(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(64),
+            conv_op(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(64),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            
+            conv_op(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(128),
+            conv_op(128, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(128),
+            
+            conv_op(128, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(256),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            conv_op(256, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(256),
+            
+            conv_op(256, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(256),
+            
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            conv_op(256, 512, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(512),
+            
+            conv_op(512, 512, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(512),
+            
+            conv_op(512, 512, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(512),
+            
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            conv_op(512, 512, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(512),
+            
+            conv_op(512, 512, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(512),
+            
+            conv_op(512, 512, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(512),
+            
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Flatten(),
+            
+            
+        )
+        #self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Sequential(
+            nn.Linear(in_features=512*4, out_features=4096),
+            nn.Dropout(p=0.5),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=4096, out_features=4096),
+            #nn.Dropout(p=0.5),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=4096, out_features=1000),
+            nn.Dropout(p=0.5),
+            nn.Linear(in_features=1000, out_features=num_classes),
+            #nn.Dropout(p=0.5),
+        )
 
+
+    def reset_parameters(self):
+        # init all params
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
+                if m.bias is not None:
+                    nn.init.consintat_(m.bias, 0.0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1.0)
+                nn.init.constant_(m.bias, 0.0)
+
+    def forward(self, x):
+        # you can implement adversarial training here
+        # if self.training:
+        #   # generate adversarial sample based on x
+        x = self.features(x)
+        #x = self.avgpool(x)
+        #x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
 
 class SimpleViT(nn.Module):
     """
