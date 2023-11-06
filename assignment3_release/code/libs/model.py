@@ -70,7 +70,17 @@ class FCOSClassificationHead(nn.Module):
         Some re-arrangement of the outputs is often preferred for training / inference.
         You can choose to do it here, or in compute_loss / inference.
         """
-        return x
+        logits = []
+        for feature_map in x:
+            # Apply convolutional layers
+            intermediate = self.conv(feature_map)
+
+            # Compute classification logits
+            logits_per_level = self.cls_logits(intermediate)
+
+            logits.append(logits_per_level)
+
+        return logits
 
 
 class FCOSRegressionHead(nn.Module):
@@ -131,7 +141,21 @@ class FCOSRegressionHead(nn.Module):
         Some re-arrangement of the outputs is often preferred for training / inference.
         You can choose to do it here, or in compute_loss / inference.
         """
-        return x, x
+        regression_outputs = []
+        center_scores = []
+        for feature_map in x:
+            # Apply convolutional layers
+            intermediate = self.conv(feature_map)
+
+            # Compute regression outputs
+            bbox_reg = self.bbox_reg(intermediate)
+            regression_outputs.append(bbox_reg)
+
+            # Compute center-ness scores
+            ctrness_scores = self.bbox_ctrness(intermediate)
+            center_scores.append(ctrness_scores)
+
+        return regression_outputs, center_scores
 
 
 class FCOS(nn.Module):
