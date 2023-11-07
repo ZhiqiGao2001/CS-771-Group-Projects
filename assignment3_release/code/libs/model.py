@@ -70,17 +70,17 @@ class FCOSClassificationHead(nn.Module):
         Some re-arrangement of the outputs is often preferred for training / inference.
         You can choose to do it here, or in compute_loss / inference.
         """
-        logits = []
+        classification_logits = []
         for feature_map in x:
-            # Apply convolutional layers
-            intermediate = self.conv(feature_map)
+            conv_results = self.conv(feature_map)
+            logits = self.cls_logits(conv_results)
+            
+            N, C, H, W = logits.shape
+            logits = logits.view(N, C, H, W).permute(0, 2, 3, 1)
+            logits = logits.reshape(N, -1, C).sigmoid()
+            classification_logits.append(logits)
 
-            # Compute classification logits
-            logits_per_level = self.cls_logits(intermediate)
-
-            logits.append(logits_per_level)
-
-        return logits
+        return classification_logits
 
 
 class FCOSRegressionHead(nn.Module):
@@ -144,16 +144,18 @@ class FCOSRegressionHead(nn.Module):
         regression_outputs = []
         center_scores = []
         for feature_map in x:
-            # Apply convolutional layers
-            intermediate = self.conv(feature_map)
+            conv_results = self.conv(feature_map)
 
-            # Compute regression outputs
-            bbox_reg = self.bbox_reg(intermediate)
-            regression_outputs.append(bbox_reg)
+            reg = self.bbox_reg(conv_results)
+            N, _, H, W = reg.shape
+            reg = reg.view(N, 4, H, W).permute(0, 2, 3, 1)
+            reg = reg.reshape(N, -1, 4)
+            regression_outputs.append(reg)
 
-            # Compute center-ness scores
-            ctrness_scores = self.bbox_ctrness(intermediate)
-            center_scores.append(ctrness_scores)
+            ctrness = self.bbox_ctrness(conv_results)
+            ctrness = ctrness.view(N, 1, H, W).permute(0, 2, 3, 1)
+            ctrness = ctrness.reshape(N, -1).sigmoid()
+            center_scores.append(ctrness)
 
         return regression_outputs, center_scores
 
@@ -437,4 +439,84 @@ class FCOS(nn.Module):
     def inference(
         self, points, strides, cls_logits, reg_outputs, ctr_logits, image_shapes
     ):
+        detections = []
+        for i in range(len(image_shapes)):
+            image_boxes = []
+            image_scores = []
+            image_labels = []
+            H, W = image_shapes[i]
+            for level in range(len(points)):
+                # (1) Compute the object scores
+                ctr_logits_expanded = ctr_logits[level][i][:,None]
+                objectness_scores = torch.sqrt(cls_logits[level][i]*ctr_logits_expanded)
+
+                # (2) Filter out boxes with object scores below the threshold
+                # keep_indices shape HxW,C
+                keep_indices = objectness_scores > self.score_thresh
+                objectness_scores = objectness_scores[keep_indices]
+                per_candidate_nonzeros = keep_indices.nonzero()
+                per_box_loc = per_candidate_nonzeros[:, 0]
+                per_class = per_candidate_nonzeros[:, 1] + 1 # Offset labels by +1
+                per_box_regression = reg_outputs[level][i][per_box_loc]
+                points[level] = points[level].reshape([-1, 2])
+                per_locations = points[level][per_box_loc]
+                
+                # (3) Select the top K boxes
+                if keep_indices.sum().item() > self.topk_candidates:
+                    objectness_scores, top_k_indices = objectness_scores.topk(self.topk_candidates, sorted=False)
+                    # (per_pre_nms_top_n,)
+                    per_class = per_class[top_k_indices]
+                    # (per_pre_nms_top_n,4)
+                    per_box_regression = per_box_regression[top_k_indices]
+                    # (per_pre_nms_top_n,2) 
+                    per_locations = per_locations[top_k_indices]
+    
+                # (4) Decode the boxes
+                box_x0 = per_locations[:, 1] - per_box_regression[:, 0] * strides[level]
+                box_y0 = per_locations[:, 0] - per_box_regression[:, 1] * strides[level]
+                box_x1 = per_locations[:, 1] + per_box_regression[:, 2] * strides[level]
+                box_y1 = per_locations[:, 0] + per_box_regression[:, 3] * strides[level]
+
+                # (5) Clip boxes outside of the image boundaries and remove small boxes
+
+                box_x0 = box_x0.clamp(min = 0, max = W-1)
+                box_x1 = box_x1.clamp(min = 0, max = W-1)
+                box_y0 = box_y0.clamp(min = 0, max = H-1)
+                box_y1 = box_y1.clamp(min = 0, max = H-1)
+
+                new_keep_indices = ((box_x1 - box_x0)>0)
+                new_keep_indices &= ((box_y1 - box_y0)>0)
+
+                boxes = torch.stack([box_x0, box_y0, box_x1, box_y1], dim=-1)
+
+                boxes = boxes[new_keep_indices]
+                scores = objectness_scores[new_keep_indices]
+                labels = per_class[new_keep_indices]
+
+                # Append detections for this level
+                image_boxes.append(boxes)
+                image_scores.append(scores)
+                image_labels.append(labels)
+
+            # (b) Collect all candidate boxes across all pyramid levels
+            image_boxes = torch.cat(image_boxes, dim = 0)
+            image_scores = torch.cat(image_scores, dim = 0)
+            image_labels = torch.cat(image_labels, dim = 0)
+
+            # (c) Run non-maximum suppression to remove duplicated boxes within each category
+            keep_indices = batched_nms(image_boxes, image_scores, image_labels, self.nms_thresh)
+
+            # (d) Keep the top K boxes after NMS
+            keep_indices = keep_indices[:self.detections_per_img]
+
+            # Append the final detections for this image
+            detections.append(
+                {
+                    "boxes": image_boxes[keep_indices],
+                    "scores": image_scores[keep_indices],
+                    "labels": image_labels[keep_indices],  
+                }
+            )
+
         return detections
+
