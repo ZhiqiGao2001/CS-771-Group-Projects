@@ -51,6 +51,7 @@ def main(args):
         ckpt_folder = os.path.join(
             cfg["output_folder"], cfg_filename + "_" + str(args.output)
         )
+    ckpt_folder = ckpt_folder.replace(":", "_")  # for Windows file name issue
     if not os.path.exists(ckpt_folder):
         os.mkdir(ckpt_folder)
     # tensorboard writer
