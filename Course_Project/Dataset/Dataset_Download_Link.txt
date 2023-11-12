@@ -4,3 +4,6 @@ Dataset不登陆就可以下载，其他需要登录
 
 
 HazeWorld中相关的部分: https://drive.google.com/drive/folders/1xo3F31fOAH9s_wPzixbc8IpyoOQ9Sh6C?usp=sharing
+
+
+fog_8_0/1/2 介绍   https://github.com/marcelsheeny/radiate_sdk#how-to-use

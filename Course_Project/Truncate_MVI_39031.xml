@@ -1,0 +1,133 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sequence name="MVI_39031"><sequence_attribute camera_state="unstable" sence_weather="sunny" /><ignored_region>
+      <box left="335.75" top="52.75" width="256.5" height="117.5" />
+      <box left="0.5" top="296.75" width="223.75" height="120.5" />
+      <box left="690.75" top="116.75" width="269.75" height="94.5" />
+   </ignored_region>
+   <frame density="2" num="51">
+      <target_list>
+         <target id="1">
+            <box left="576" top="171.73" width="60.73" height="51.14" />
+            <attribute orientation="227.73" speed="3.1714" trajectory_length="336" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="2">
+            <box left="730.67" top="242.13" width="100.2" height="70.34" />
+            <attribute orientation="233.29" speed="7.8507" trajectory_length="331" truncation_ratio="0" vehicle_type="car" />
+         </target>
+      </target_list>
+   </frame>
+   <frame density="3" num="101">
+      <target_list>
+         <target id="1">
+            <box left="525.87" top="136.53" width="39.4" height="35.14" />
+            <attribute orientation="228.37" speed="1.2844" trajectory_length="336" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="2">
+            <box left="596.27" top="165.33" width="51.13" height="37.27" />
+            <attribute orientation="239.93" speed="2.3418" trajectory_length="331" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="3">
+            <box left="808.53" top="307.2" width="130.07" height="91.67" />
+            <attribute orientation="226.01" speed="8.5997" trajectory_length="321" truncation_ratio="0" vehicle_type="car" />
+         </target>
+      </target_list>
+   </frame>
+   <frame density="4" num="151">
+      <target_list>
+         <target id="1">
+            <box left="509.87" top="117.33" width="27.66" height="25.54" />
+            <attribute orientation="243.43" speed="0.71554" trajectory_length="336" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="2">
+            <box left="553.6" top="133.33" width="34.07" height="26.6" />
+            <attribute orientation="237.99" speed="1.0063" trajectory_length="331" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="3">
+            <box left="635.73" top="187.73" width="57.54" height="43.67" />
+            <attribute orientation="242.45" speed="2.7672" trajectory_length="321" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="4">
+            <box left="864" top="493.87" width="97.0" height="47.13" />
+            <attribute orientation="229.13" speed="7.3352" trajectory_length="436" truncation_ratio="0.7876" vehicle_type="van" />
+         </target>
+      </target_list>
+   </frame>
+   <frame density="7" num="201">
+      <target_list>
+         <target id="1">
+            <box left="498.13" top="114.13" width="21.27" height="19.14" />
+            <attribute orientation="254.05" speed="0.77655" trajectory_length="336" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="2">
+            <box left="531.2" top="124.8" width="25.53" height="23.4" />
+            <attribute orientation="276.34" speed="0.96591" trajectory_length="331" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="3">
+            <box left="564.27" top="152.53" width="38.33" height="28.74" />
+            <attribute orientation="263.29" speed="1.8258" trajectory_length="321" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="4">
+            <box left="624" top="256" width="81.0" height="79.93" />
+            <attribute orientation="229.4" speed="3.9337" trajectory_length="436" truncation_ratio="0" vehicle_type="van" />
+         </target>
+         <target id="5">
+            <box left="433.07" top="124.8" width="26.6" height="22.33" />
+            <attribute orientation="349.7" speed="1.1926" trajectory_length="221" truncation_ratio="0" vehicle_type="car" />
+            <occlusion>
+               <region_overlap left="433.07" top="124.8" width="20.2" height="6.33" occlusion_id="6" occlusion_status="1" />
+            </occlusion>
+         </target>
+         <target id="6">
+            <box left="430.93" top="109.87" width="22.34" height="21.26" />
+            <attribute orientation="333.43" speed="0.71554" trajectory_length="256" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="7">
+            <box left="405.33" top="102.4" width="17.0" height="19.13" />
+            <attribute orientation="270" speed="0.42667" trajectory_length="391" truncation_ratio="0" vehicle_type="car" />
+         </target>
+      </target_list>
+   </frame>
+   <frame density="9" num="251">
+      <target_list>
+         <target id="1">
+            <box left="485.33" top="110.93" width="18.07" height="17.0" />
+            <attribute orientation="326.31" speed="0.38459" trajectory_length="336" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="2">
+            <box left="515.2" top="118.4" width="19.13" height="18.07" />
+            <attribute orientation="270" speed="0.42667" trajectory_length="331" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="3">
+            <box left="532.27" top="134.4" width="26.6" height="20.2" />
+            <attribute orientation="260.54" speed="0.64883" trajectory_length="321" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="4">
+            <box left="554.67" top="188.8" width="47.93" height="49.0" />
+            <attribute orientation="239.04" speed="1.2439" trajectory_length="436" truncation_ratio="0" vehicle_type="van" />
+         </target>
+         <target id="5">
+            <box left="437.33" top="152.53" width="31.94" height="29.8" />
+            <attribute orientation="7.125" speed="0.85997" trajectory_length="221" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="6">
+            <box left="436.27" top="129.07" width="23.4" height="22.33" />
+            <attribute orientation="11.31" speed="0.5439" trajectory_length="256" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="7">
+            <box left="402.13" top="115.2" width="19.14" height="21.27" />
+            <attribute orientation="348.69" speed="0.5439" trajectory_length="391" truncation_ratio="0" vehicle_type="car" />
+            <occlusion>
+               <region_overlap left="411.73" top="115.2" width="9.54" height="3.13" occlusion_id="9" occlusion_status="1" />
+            </occlusion>
+         </target>
+         <target id="8">
+            <box left="432" top="106.67" width="17.0" height="13.8" />
+            <attribute orientation="348.69" speed="0.5439" trajectory_length="326" truncation_ratio="0" vehicle_type="car" />
+         </target>
+         <target id="9">
+            <box left="411.73" top="104.53" width="13.8" height="13.8" />
+            <attribute orientation="270" speed="0" trajectory_length="376" truncation_ratio="0" vehicle_type="car" />
+         </target>
+      </target_list>
+   </frame>
+   </sequence>
