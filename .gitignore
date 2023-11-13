@@ -1,3 +1,7 @@
+*.pyc
+.idea/misc.xml
+.idea/Group Projects.iml
+
 assignment2_release/data/images
 assignment2_release/data/objects
 assignment2_release/data/data.tar.gz
@@ -5,14 +9,13 @@ assignment2_release/logs/exp_2023-10-21 04_54_31/models/checkpoint.pth.tar
 assignment2_release/logs/exp_2023-10-21 04_54_31/models/model_best.pth.tar
 assignment2_release/code/.pytest_cache
 assignment2_release/code/__pycache__
-assignment2_release/code/__pycache__/student_code.cpython-39.pyc
-*.pyc
+assignment2_release/Images
 assignment2_release/submission.zip
 assignment2_release/temp_submission/
 assignment2_release/writeup/CS_771_Assignment_Writeup.pdf
+
 assignment3_release/data
-.idea/misc.xml
-.idea/Group Projects.iml
+
 Course_Project/Dataset/UA-DETRAC
 Course_Project/Dataset/DETRAC-test-data
 Course_Project/Dataset/DETRAC-train-data
