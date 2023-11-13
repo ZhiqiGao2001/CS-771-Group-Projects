@@ -1,6 +1,7 @@
 *.pyc
 .idea/misc.xml
 .idea/Group Projects.iml
+*.zip
 
 assignment2_release/data/images
 assignment2_release/data/objects
