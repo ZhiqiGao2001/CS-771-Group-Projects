@@ -53,5 +53,5 @@ image_path = 'Dataset/DETRAC-test-data/Insight-MVT_Annotation_Test/MVI_39031'
 xml_file_modify = 'Dataset/UA-DETRAC-Annotations/train/MVI_20011.xml'
 image_path_modify = 'Dataset/UA-DETRAC/hazy/train/MVI_20011_229_0.01'
 # visualize_boxes(xml_file, image_path, frame_interval=50)
-visualize_boxes(xml_file_modify, image_path_modify, frame_interval=14)
+visualize_boxes(xml_file_modify, image_path_modify, frame_interval=7)
 
