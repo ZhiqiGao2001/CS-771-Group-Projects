@@ -77,7 +77,7 @@ class FCOSClassificationHead(nn.Module):
             
             N, C, H, W = logits.shape
             logits = logits.view(N, C, H, W).permute(0, 2, 3, 1)
-            logits = logits.reshape(N, -1, C).sigmoid()
+            logits = logits.reshape(N, -1, C)
             classification_logits.append(logits)
 
         return classification_logits
@@ -154,7 +154,7 @@ class FCOSRegressionHead(nn.Module):
 
             ctrness = self.bbox_ctrness(conv_results)
             ctrness = ctrness.view(N, 1, H, W).permute(0, 2, 3, 1)
-            ctrness = ctrness.reshape(N, -1).sigmoid()
+            ctrness = ctrness.reshape(N, -1)
             center_scores.append(ctrness)
 
         return regression_outputs, center_scores
@@ -397,10 +397,146 @@ class FCOS(nn.Module):
     where the final_loss is a sum of the three losses and will be used for training.
     """
 
+    '''
+    points: (N,H,W,2)
+    strides: (N,)
+    reg_range: (N,?)
+    cls_logits: (N,HxW,C)
+    reg_outputs: (N,HxW,4)
+    ctr_logits: (N,HxW)
+    '''
     def compute_loss(
         self, targets, points, strides, reg_range, cls_logits, reg_outputs, ctr_logits
     ):
-        return losses
+        for level in range(len(points)):
+            points[level] = points[level].reshape([-1, 2])
+
+        num_points_per_level = [len(points_per_level) for points_per_level in points]
+        points_all_level = torch.cat(points, dim=0)
+        
+        labels = []
+        reg_targets = []
+        
+        xs, ys = points_all_level[:, 0], points_all_level[:, 1]
+
+        for target in targets:
+            boxes_per_im = target['boxes']
+            labels_per_im = target['labels']
+            
+            areas_per_im = torch.zeros_like(labels_per_im)
+            for i in range(len(boxes_per_im)):
+                areas_per_im[i] = (boxes_per_im[i][0]-boxes_per_im[i][2])*(boxes_per_im[i][1]-boxes_per_im[i][3])
+
+            l = xs[:, None] - boxes_per_im[:, 0][None]
+            t = ys[:, None] - boxes_per_im[:, 1][None]
+            r = boxes_per_im[:, 2][None] - xs[:, None]
+            b = boxes_per_im[:, 3][None] - ys[:, None]
+            reg_targets_per_im = torch.stack([l, t, r, b], dim=2) # (num_points_all_levels,num_objects_i,4)
+
+
+            center_x = (boxes_per_im[..., 0] + boxes_per_im[..., 2]) / 2
+            center_y = (boxes_per_im[..., 1] + boxes_per_im[..., 3]) / 2
+
+            # (num_points_all_levels,num_objects_i)
+            is_foreground = xs.new_zeros(reg_targets_per_im[...,0].shape, dtype=torch.uint8)
+            is_cared_in_the_level = xs.new_zeros(reg_targets_per_im[...,0].shape, dtype=torch.uint8)
+            max_reg_targets_per_im = reg_targets_per_im.max(dim=2)[0]
+            p_start = 0
+            for level, n_p in enumerate(num_points_per_level):
+                r = self.center_sampling_radius * strides[level]
+                xmin = center_x - r
+                ymin = center_y - r
+                xmax = center_x + r
+                ymax = center_y + r
+                for p_index in range(n_p):
+                    tmp_point = points_all_level[p_index]
+                    is_foreground[p_index] = (tmp_point[0]>=xmin) & (tmp_point[1]>=ymin) & (tmp_point[0]<=xmax) &(tmp_point[1]<=ymax)
+                    is_cared_in_the_level[p_index] = (reg_range[level][1]>=max_reg_targets_per_im[p_index]) & (reg_range[level][0]<=max_reg_targets_per_im[p_index])
+                p_start += n_p
+                
+            # (num_points_all_levels,num_objects_i)
+            locations_to_gt_area = areas_per_im[None].repeat(len(points_all_level), 1)
+            is_foreground = is_foreground.expand(-1, locations_to_gt_area.shape[1])
+            is_cared_in_the_level = is_cared_in_the_level.expand(-1, locations_to_gt_area.shape[1])
+            locations_to_gt_area[is_foreground == 0] = 1e8
+            locations_to_gt_area[is_cared_in_the_level == 0] = 1e8
+            # (num_points_all_levels,） (num_points_all_levels,）
+            locations_to_min_area, locations_to_gt_inds = locations_to_gt_area.min(dim=1)
+            # (num_points_all_levels,4) 
+            
+            # (num_points_all_levels,4)
+            reg_targets_per_im = reg_targets_per_im[range(len(points_all_level)), locations_to_gt_inds]
+            # (num_points_all_levels,)
+            labels_per_im = labels_per_im[locations_to_gt_inds]
+            labels_per_im[locations_to_min_area == 1e8] = 0
+            labels_per_im_expand = (labels_per_im>0).unsqueeze(1).expand(-1,4)
+            reg_targets_per_im *= labels_per_im_expand
+            labels.append(labels_per_im)
+            reg_targets.append(reg_targets_per_im)
+
+        for i in range(len(labels)):
+            labels[i] = torch.split(labels[i], num_points_per_level, dim=0)
+            reg_targets[i] = torch.split(reg_targets[i], num_points_per_level, dim=0)
+
+        labels_level_first = []
+        reg_targets_level_first = []
+
+        for level in range(len(points)):
+            labels_level_first.append(
+                torch.cat([labels_per_im[level] for labels_per_im in labels], dim=0)
+            )
+            
+            reg_targets_per_level = torch.cat([reg_target[level] for reg_target in reg_targets], dim=0)
+            reg_targets_per_level = reg_targets_per_level / strides[level]
+            reg_targets_level_first.append(reg_targets_per_level)
+
+        cls_logits_flatten = [cls_logit.reshape(-1, self.num_classes) for cls_logit in cls_logits]
+        reg_outputs_flatten = [reg_output.reshape(-1, 4) for reg_output in reg_outputs]
+        ctr_logits_flatten = [ctr_logit.reshape(-1) for ctr_logit in ctr_logits]
+
+        labels_flatten = [label_level_first.reshape(-1) for label_level_first in labels_level_first]
+        reg_targets_flatten = [reg_target_level_first.reshape(-1, 4) for reg_target_level_first in reg_targets_level_first]
+
+        cls_logits_flatten = torch.cat(cls_logits_flatten, dim=0)
+        reg_outputs_flatten = torch.cat(reg_outputs_flatten, dim=0)
+        ctr_logits_flatten = torch.cat(ctr_logits_flatten, dim=0)
+
+        labels_flatten = torch.cat(labels_flatten, dim=0)
+        reg_targets_flatten = torch.cat(reg_targets_flatten, dim=0)
+
+        positive_mask = labels_flatten > 0
+        num_positive_points = positive_mask.sum().float()
+        ctr_logits_flatten = ctr_logits_flatten*positive_mask
+        positive_mask = positive_mask.unsqueeze(1).expand(-1,4)
+        reg_outputs_flatten = reg_outputs_flatten*positive_mask
+        reg_targets_flatten = reg_targets_flatten*positive_mask
+
+        labels_flatten_num_classes = torch.zeros_like(cls_logits_flatten)
+
+        for i in range(len(labels_flatten)):
+            labels_flatten_num_classes[i][labels_flatten[i].int()] = 1
+        cls_loss = sigmoid_focal_loss(cls_logits_flatten,labels_flatten_num_classes) / num_positive_points
+
+        if num_positive_points > 0:
+            reg_loss = giou_loss(reg_outputs_flatten, reg_targets_flatten) / num_positive_points
+            left_right = reg_targets[:, [0, 2]]
+            top_bottom = reg_targets[:, [1, 3]]
+            centerness = (left_right.min(dim=-1)[0] / left_right.max(dim=-1)[0]) * (top_bottom.min(dim=-1)[0] / top_bottom.max(dim=-1)[0])
+            centerness_targets =  torch.sqrt(centerness)
+
+            ctr_loss = nn.functional.binary_cross_entropy_with_logits(ctr_logits_flatten, centerness_targets)/ num_positive_points
+        else:
+            reg_loss = torch.zeros_like(cls_loss)
+            ctr_loss = torch.zeros_like(cls_loss)
+
+        final_loss = cls_loss + reg_loss + ctr_loss
+
+        return {
+            "cls_loss": cls_loss,
+            "reg_loss": reg_loss,
+            "ctr_loss": ctr_loss,
+            "final_loss": final_loss,
+        }
 
     """
     Fill in the missing code here. The inference is also a bit involved. It is
@@ -439,6 +575,10 @@ class FCOS(nn.Module):
     def inference(
         self, points, strides, cls_logits, reg_outputs, ctr_logits, image_shapes
     ):
+        for i in range(len(cls_logits)):
+            cls_logits[i] = cls_logits[i].sigmoid()
+        for i in range(len(ctr_logits)):
+            ctr_logits[i] = ctr_logits[i].sigmoid()
         detections = []
         for i in range(len(image_shapes)):
             image_boxes = []
