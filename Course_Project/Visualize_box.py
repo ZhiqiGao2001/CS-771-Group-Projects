@@ -42,7 +42,7 @@ def visualize_boxes(xml_file, image_path, frame_interval):
             plt.show()
 
         # Remove the break statement if you want to visualize all frames
-        if frame_counter == 10:  # Change 5 to the number of times you want to execute the loop
+        if frame_counter == 5:  # Change 5 to the number of times you want to execute the loop
             break
 
 # Example usage
@@ -51,7 +51,7 @@ xml_file = 'Dataset/DETRAC-Test-Annotations-XML/MVI_39031.xml'
 image_path = 'Dataset/DETRAC-test-data/Insight-MVT_Annotation_Test/MVI_39031'
 
 xml_file_modify = 'Dataset/UA-DETRAC-Annotations/train/MVI_20011.xml'
-image_path_modify = 'Dataset/UA-DETRAC/hazy/train/MVI_20011_229_0.01'
+image_path_modify = 'Dataset/UA-DETRAC/gt/train/MVI_20011'
 # visualize_boxes(xml_file, image_path, frame_interval=50)
 visualize_boxes(xml_file_modify, image_path_modify, frame_interval=7)
 

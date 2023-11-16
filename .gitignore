@@ -15,6 +15,10 @@ assignment2_release/submission.zip
 assignment2_release/temp_submission/
 assignment2_release/writeup/CS_771_Assignment_Writeup.pdf
 
+assignment3_release/data/VOCtest_06-Nov-2007.tar
+assignment3_release/data/VOCtrainval_06-Nov-2007.tar
+assignment3_release/data/VOCdevkit
+
 
 Course_Project/Dataset/UA-DETRAC
 Course_Project/Dataset/DETRAC-test-data
@@ -26,5 +30,5 @@ Course_Project/Dataset/fog_8_1
 Course_Project/Dataset/fog_8_2
 Course_Project/Dataset/UA-DETRAC-Annotations
 Course_Project/Dataset/UA-DETRAC-Annotations-avgAttributes
-Course_Project/Dataset.zip
+Course_Project/Dataset/UA-DETRAC-Annotations-Yolo
 Course_Project/Test_Output
