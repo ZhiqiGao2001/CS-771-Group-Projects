@@ -409,6 +409,10 @@ class FCOS(nn.Module):
     def compute_loss(
         self, targets, points, strides, reg_range, cls_logits, reg_outputs, ctr_logits
     ):
+        # for i in range(len(cls_logits)):
+        #     cls_logits[i] = cls_logits[i].sigmoid()
+        # for i in range(len(ctr_logits)):
+        #     ctr_logits[i] = ctr_logits[i].sigmoid()
         for level in range(len(points)):
             points[level] = points[level].reshape([-1, 2]) # Level,HxW,2
 
@@ -452,44 +456,48 @@ class FCOS(nn.Module):
         reg_range_all = expanded_object_sizes_of_interest[:, None, :].expand(num_points, num_obj_all, 2)# (num_points, num_obj_all,2)
 
 
-        # eq1
-        l = xs - boxes_all_im[..., 0]
-        t = ys - boxes_all_im[..., 1]
-        r = boxes_all_im[..., 2] - xs
-        b = boxes_all_im[..., 3] - ys
-        reg_targets = torch.stack([l, t, r, b], dim=2) # (num_points, num_obj_all,4)
         
         # center sampling
         center_x = (boxes_all_im[..., 0] + boxes_all_im[..., 2]) / 2
         center_y = (boxes_all_im[..., 1] + boxes_all_im[..., 3]) / 2
         center_gts = torch.zeros_like(boxes_all_im)
+
         #expand stride
         strides_expand = center_x.new_zeros(center_x.shape) # (num_points, num_obj_all)
-
+        strides_expand_for_targets = center_x.new_zeros(center_x.shape) # (num_points, num_obj_all)
         # project the points on current level back to the `original` sizes
         p_start = 0
         for level, n_p in enumerate(num_points_per_level):
             p_end = p_start + n_p
             strides_expand[p_start:p_end] = self.center_sampling_radius * strides[level]
+            strides_expand_for_targets[p_start:p_end] = strides[level]
             p_start = p_end
+
         x_min = center_x - strides_expand
         y_min = center_y - strides_expand
         x_max = center_x + strides_expand
         y_max = center_y + strides_expand
 
-        center_gts[..., 0] = torch.where(x_min > boxes_all_im[..., 0], x_min, boxes_all_im[..., 0])
-        center_gts[..., 1] = torch.where(y_min > boxes_all_im[..., 1], y_min, boxes_all_im[..., 1])
-        center_gts[..., 2] = torch.where(x_max > boxes_all_im[..., 2], boxes_all_im[..., 2], x_max)
-        center_gts[..., 3] = torch.where(y_max > boxes_all_im[..., 3], boxes_all_im[..., 3], y_max)
+        center_gts[..., 0] = torch.clamp(x_min, min=boxes_all_im[..., 0])
+        center_gts[..., 1] = torch.clamp(y_min, min=boxes_all_im[..., 1])
+        center_gts[..., 2] = torch.clamp(x_max, max=boxes_all_im[..., 2])
+        center_gts[..., 3] = torch.clamp(y_max, max=boxes_all_im[..., 3])
         cb_dist_left = xs - center_gts[..., 0]
-        cb_dist_right = center_gts[..., 2] - xs
         cb_dist_top = ys - center_gts[..., 1]
+        cb_dist_right = center_gts[..., 2] - xs
         cb_dist_bottom = center_gts[..., 3] - ys
         center_bbox = torch.stack((cb_dist_left, cb_dist_top, cb_dist_right, cb_dist_bottom), -1)
         is_in_box = center_bbox.min(-1)[0] > 0 # (num_points, num_obj_all)
 
+        # eq1
+        l = (xs - boxes_all_im[..., 0])/strides_expand_for_targets
+        t = (ys - boxes_all_im[..., 1])/strides_expand_for_targets
+        r = (boxes_all_im[..., 2] - xs)/strides_expand_for_targets
+        b = (boxes_all_im[..., 3] - ys)/strides_expand_for_targets
+        reg_targets = torch.stack([l, t, r, b], dim=2) # (num_points, num_obj_all,4)
+
         max_reg_targets = reg_targets.max(dim=2)[0]# (num_points, num_obj_all)
-        is_in_reg_range = ((max_reg_targets >= reg_range_all[..., 0]) & (max_reg_targets <= reg_range_all[..., 1])) # (num_points, num_obj_all)
+        is_in_reg_range = ((max_reg_targets > reg_range_all[..., 0]) & (max_reg_targets < reg_range_all[..., 1])) # (num_points, num_obj_all)
         
         # if there are still more than one objects for a location,
         # we choose the one with minimal area
@@ -501,16 +509,16 @@ class FCOS(nn.Module):
             reg_targets_per_img = reg_targets[:,obj_start:obj_end,:]
             is_in_box_per_img = is_in_box[:,obj_start:obj_end]
             is_in_reg_rangeper_img = is_in_reg_range[:,obj_start:obj_end]
-            obj_start = obj_end      
+            obj_start = obj_end
+
             areas_all_im[n][is_in_box_per_img == 0] = 1e8
             areas_all_im[n][is_in_reg_rangeper_img == 0] = 1e8
             min_area, min_area_inds = areas_all_im[n].min(dim=1) # (num_points,)
-
-            labels_per_img = labels_all_im_lst[n][min_area_inds]  # (num_points, )
-            labels_per_img[min_area == 1e8] = self.num_classes
+            labels_per_img = labels_all_im_lst[n][min_area_inds]
+            labels_per_img[min_area == 1e8] = self.num_classes # (num_points,)
             labels_lst.append(torch.split(labels_per_img, num_points_per_level, dim=0))
             
-            reg_targets_per_img = reg_targets_per_img[range(num_points), min_area_inds]
+            reg_targets_per_img = reg_targets_per_img[range(num_points), min_area_inds] 
             reg_targets_lst.append(torch.split(reg_targets_per_img, num_points_per_level, dim=0))
         
         #level first
@@ -545,8 +553,8 @@ class FCOS(nn.Module):
         
         labels_flatten_num_classes = torch.nn.functional.one_hot(labels_flatten)
         labels_flatten_num_classes = labels_flatten_num_classes[:,:self.num_classes]
-
-        cls_loss = sigmoid_focal_loss(cls_logits_flatten,labels_flatten_num_classes) / num_positive_points
+        
+        cls_loss = sigmoid_focal_loss(cls_logits_flatten,labels_flatten_num_classes)
         if len(positive_mask) > 0:
             num_imgs = cls_logits[0].size(0)
             flatten_points = torch.cat([points.repeat(num_imgs, 1) for points in points_all_level])
@@ -563,22 +571,22 @@ class FCOS(nn.Module):
             tmp_t = pos_points[...,1] - reg_targets_flatten[..., 1]
             tmp_b = pos_points[...,1] + reg_targets_flatten[..., 3]
             decoded_reg_targets_flatten = torch.stack((tmp_l, tmp_t, tmp_r, tmp_b), -1)
-            reg_loss = giou_loss(decoded_reg_outputs_flatten, decoded_reg_targets_flatten) / num_positive_points
+            
+            reg_loss = giou_loss(decoded_reg_outputs_flatten, decoded_reg_targets_flatten)
 
             left_right = reg_targets_flatten[:, [0, 2]]
             top_bottom = reg_targets_flatten[:, [1, 3]]
             centerness = (left_right.min(dim=-1)[0] / left_right.max(dim=-1)[0]) * (top_bottom.min(dim=-1)[0] / top_bottom.max(dim=-1)[0])
             centerness_targets =  torch.sqrt(centerness)
-            ctr_loss = nn.functional.binary_cross_entropy_with_logits(ctr_logits_flatten, centerness_targets) / num_positive_points
+            ctr_loss = nn.functional.binary_cross_entropy_with_logits(ctr_logits_flatten, centerness_targets,reduction='none') 
+
         else:
-            # reg_loss = reg_outputs_flatten.sum()
-            # ctr_loss = ctr_logits_flatten.sum()
             reg_loss = torch.zeros_like(cls_loss)
             ctr_loss = torch.zeros_like(cls_loss)
 
-        cls_loss = cls_loss.sum()
-        reg_loss = reg_loss.sum()
-        ctr_loss = ctr_loss.sum()
+        cls_loss = cls_loss.sum()/ num_positive_points
+        reg_loss = reg_loss.sum()/ num_positive_points
+        ctr_loss = ctr_loss.sum()/ num_positive_points
         final_loss = cls_loss + reg_loss + ctr_loss
         
         return {
