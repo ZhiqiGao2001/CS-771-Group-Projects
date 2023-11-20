@@ -443,7 +443,7 @@ class FCOS(nn.Module):
         # Compute regression and classification targets
 
         #expand boxes and points x and y
-        xs, ys = points_all_level[:, 0], points_all_level[:, 1]
+        xs, ys = points_all_level[:, 1], points_all_level[:, 0]
         xs = xs[:, None].expand(num_points, num_obj_all) # (num_points, num_obj_all)
         ys = ys[:, None].expand(num_points, num_obj_all) # (num_points, num_obj_all)
         
@@ -560,16 +560,16 @@ class FCOS(nn.Module):
             flatten_points = torch.cat([points.repeat(num_imgs, 1) for points in points_all_level])
             pos_points = flatten_points[positive_mask]
             
-            tmp_l = pos_points[...,0] - reg_outputs_flatten[..., 0]
-            tmp_r = pos_points[...,0] + reg_outputs_flatten[..., 2]
-            tmp_t = pos_points[...,1] - reg_outputs_flatten[..., 1]
-            tmp_b = pos_points[...,1] + reg_outputs_flatten[..., 3]
+            tmp_l = pos_points[...,1] - reg_outputs_flatten[..., 0]
+            tmp_r = pos_points[...,1] + reg_outputs_flatten[..., 2]
+            tmp_t = pos_points[...,0] - reg_outputs_flatten[..., 1]
+            tmp_b = pos_points[...,0] + reg_outputs_flatten[..., 3]
             decoded_reg_outputs_flatten = torch.stack((tmp_l, tmp_t, tmp_r, tmp_b), -1)
             
-            tmp_l = pos_points[...,0] - reg_targets_flatten[..., 0]
-            tmp_r = pos_points[...,0] + reg_targets_flatten[..., 2]
-            tmp_t = pos_points[...,1] - reg_targets_flatten[..., 1]
-            tmp_b = pos_points[...,1] + reg_targets_flatten[..., 3]
+            tmp_l = pos_points[...,1] - reg_targets_flatten[..., 0]
+            tmp_r = pos_points[...,1] + reg_targets_flatten[..., 2]
+            tmp_t = pos_points[...,0] - reg_targets_flatten[..., 1]
+            tmp_b = pos_points[...,0] + reg_targets_flatten[..., 3]
             decoded_reg_targets_flatten = torch.stack((tmp_l, tmp_t, tmp_r, tmp_b), -1)
             
             reg_loss = giou_loss(decoded_reg_outputs_flatten, decoded_reg_targets_flatten)
