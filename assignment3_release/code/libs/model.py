@@ -409,10 +409,6 @@ class FCOS(nn.Module):
     def compute_loss(
         self, targets, points, strides, reg_range, cls_logits, reg_outputs, ctr_logits
     ):
-        # for i in range(len(cls_logits)):
-        #     cls_logits[i] = cls_logits[i].sigmoid()
-        # for i in range(len(ctr_logits)):
-        #     ctr_logits[i] = ctr_logits[i].sigmoid()
         for level in range(len(points)):
             points[level] = points[level].reshape([-1, 2]) # Level,HxW,2
 
@@ -420,27 +416,28 @@ class FCOS(nn.Module):
         num_objects_per_img = [len(target['boxes']) for target in targets]
         points_all_level = torch.cat(points, dim=0) # (num_points, 2)
         num_points = len(points_all_level) # num_points = LevelxHxW
+        num_obj_all = sum(num_objects_per_img)
 
         boxes_all_im = []
-        labels_all_im_lst = []
+        labels_all_im = []
         areas_all_im = []
         for target in targets:
             boxes_per_im = target['boxes']
             labels_per_im = target['labels']
             boxes_all_im.append(boxes_per_im)
-            labels_all_im_lst.append(labels_per_im)
+            labels_all_im.append(labels_per_im)
             # areas
-            areas_per_im = (boxes_per_im[:, 2] - boxes_per_im[:, 0]) * (boxes_per_im[:, 3] - boxes_per_im[:, 1]) 
-            areas_per_im = areas_per_im[None].repeat(num_points, 1) # (num_points, num_obj_all)
-            areas_all_im.append(areas_per_im) # N,num_points,num_obj_per_img
+            areas_per_im = (boxes_per_im[:, 2] - boxes_per_im[:, 0]) * (boxes_per_im[:, 3] - boxes_per_im[:, 1])
+            areas_all_im.append(areas_per_im)
             
         boxes_all_im = torch.cat(boxes_all_im, dim=0)
-        num_obj_all = boxes_all_im.shape[0]
+        labels_all_im = torch.cat(labels_all_im, dim=0)
+        areas_all_im = torch.cat(areas_all_im, dim=0)
         
         # expand boxes
         boxes_all_im = boxes_all_im[None].expand(num_points, num_obj_all, 4) # (num_points, num_obj_all,4)
-
-        # Compute regression and classification targets
+        labels_all_im = labels_all_im[None].expand(num_points, num_obj_all) # (num_points, num_obj_all)
+        areas_all_im = areas_all_im[None].expand(num_points, num_obj_all) # (num_points, num_obj_all)
 
         #expand boxes and points x and y
         xs, ys = points_all_level[:, 1], points_all_level[:, 0]
@@ -456,15 +453,14 @@ class FCOS(nn.Module):
         reg_range_all = expanded_object_sizes_of_interest[:, None, :].expand(num_points, num_obj_all, 2)# (num_points, num_obj_all,2)
 
 
-        
         # center sampling
         center_x = (boxes_all_im[..., 0] + boxes_all_im[..., 2]) / 2
         center_y = (boxes_all_im[..., 1] + boxes_all_im[..., 3]) / 2
-        center_gts = torch.zeros_like(boxes_all_im)
 
         #expand stride
-        strides_expand = center_x.new_zeros(center_x.shape) # (num_points, num_obj_all)
-        strides_expand_for_targets = center_x.new_zeros(center_x.shape) # (num_points, num_obj_all)
+        strides_expand = torch.zeros_like(center_x) # (num_points, num_obj_all)
+        strides_expand_for_targets = torch.zeros_like(center_x) # (num_points, num_obj_all)
+
         # project the points on current level back to the `original` sizes
         p_start = 0
         for level, n_p in enumerate(num_points_per_level):
@@ -478,16 +474,8 @@ class FCOS(nn.Module):
         x_max = center_x + strides_expand
         y_max = center_y + strides_expand
 
-        center_gts[..., 0] = torch.clamp(x_min, min=boxes_all_im[..., 0])
-        center_gts[..., 1] = torch.clamp(y_min, min=boxes_all_im[..., 1])
-        center_gts[..., 2] = torch.clamp(x_max, max=boxes_all_im[..., 2])
-        center_gts[..., 3] = torch.clamp(y_max, max=boxes_all_im[..., 3])
-        cb_dist_left = xs - center_gts[..., 0]
-        cb_dist_top = ys - center_gts[..., 1]
-        cb_dist_right = center_gts[..., 2] - xs
-        cb_dist_bottom = center_gts[..., 3] - ys
-        center_bbox = torch.stack((cb_dist_left, cb_dist_top, cb_dist_right, cb_dist_bottom), -1)
-        is_in_box = center_bbox.min(-1)[0] > 0 # (num_points, num_obj_all)
+        is_in_box = (xs<boxes_all_im[..., 2]) & (xs>boxes_all_im[..., 0]) & (ys<boxes_all_im[..., 3]) & (ys>boxes_all_im[..., 1]) 
+        is_in_center = (xs<x_max) & (xs>x_min) & (ys<y_max) & (ys>y_min) 
 
         # eq1
         l = (xs - boxes_all_im[..., 0])/strides_expand_for_targets
@@ -498,24 +486,24 @@ class FCOS(nn.Module):
 
         max_reg_targets = reg_targets.max(dim=2)[0]# (num_points, num_obj_all)
         is_in_reg_range = ((max_reg_targets > reg_range_all[..., 0]) & (max_reg_targets < reg_range_all[..., 1])) # (num_points, num_obj_all)
-        
-        # if there are still more than one objects for a location,
-        # we choose the one with minimal area
+
+        valid_points = is_in_box & is_in_reg_range & is_in_center
+
+        labels_all_im = torch.where(valid_points, labels_all_im, self.num_classes)
+        areas_all_im = torch.where(valid_points, areas_all_im, 1e8)
+
         obj_start = 0
         reg_targets_lst = []
         labels_lst = []
         for n in range(len(targets)):
             obj_end = obj_start + num_objects_per_img[n]
             reg_targets_per_img = reg_targets[:,obj_start:obj_end,:]
-            is_in_box_per_img = is_in_box[:,obj_start:obj_end]
-            is_in_reg_rangeper_img = is_in_reg_range[:,obj_start:obj_end]
+            labels_per_img = labels_all_im[:,obj_start:obj_end]
+            areas_per_img = areas_all_im[:,obj_start:obj_end]
             obj_start = obj_end
 
-            areas_all_im[n][is_in_box_per_img == 0] = 1e8
-            areas_all_im[n][is_in_reg_rangeper_img == 0] = 1e8
-            min_area, min_area_inds = areas_all_im[n].min(dim=1) # (num_points,)
-            labels_per_img = labels_all_im_lst[n][min_area_inds]
-            labels_per_img[min_area == 1e8] = self.num_classes # (num_points,)
+            min_area, min_area_inds = areas_per_img.min(dim=1) # (num_points,)
+            labels_per_img = labels_per_img[range(num_points),min_area_inds]
             labels_lst.append(torch.split(labels_per_img, num_points_per_level, dim=0))
             
             reg_targets_per_img = reg_targets_per_img[range(num_points), min_area_inds] 
@@ -545,19 +533,20 @@ class FCOS(nn.Module):
 
         # choose foreground points
         positive_mask = ((labels_flatten >= 0) & (labels_flatten < self.num_classes)).nonzero().reshape(-1)
-        num_positive_points = torch.tensor(len(positive_mask), dtype=torch.float, device=reg_outputs_flatten[0].device)
-        num_positive_points = max(torch.mean(num_positive_points), 1.0)
+        num_positive_points = torch.tensor(len(positive_mask), dtype=torch.float)#, device=reg_outputs_flatten[0].device)
+        num_positive_points = max(num_positive_points, 1.0)
         reg_outputs_flatten = reg_outputs_flatten[positive_mask]
         ctr_logits_flatten = ctr_logits_flatten[positive_mask]
         reg_targets_flatten = reg_targets_flatten[positive_mask]
         
-        labels_flatten_num_classes = torch.nn.functional.one_hot(labels_flatten)
+        labels_flatten_num_classes = torch.nn.functional.one_hot(labels_flatten,num_classes=self.num_classes+1)
         labels_flatten_num_classes = labels_flatten_num_classes[:,:self.num_classes]
         
         cls_loss = sigmoid_focal_loss(cls_logits_flatten,labels_flatten_num_classes)
+
         if len(positive_mask) > 0:
             num_imgs = cls_logits[0].size(0)
-            flatten_points = torch.cat([points.repeat(num_imgs, 1) for points in points_all_level])
+            flatten_points = torch.cat([points[None].expand(num_imgs, 2) for points in points_all_level], dim=0)
             pos_points = flatten_points[positive_mask]
             
             tmp_l = pos_points[...,1] - reg_outputs_flatten[..., 0]
