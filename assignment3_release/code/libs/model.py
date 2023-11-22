@@ -458,8 +458,8 @@ class FCOS(nn.Module):
         center_y = (boxes_all_im[..., 1] + boxes_all_im[..., 3]) / 2
 
         #expand stride
-        strides_expand = torch.zeros_like(center_x) # (num_points, num_obj_all)
-        strides_expand_for_targets = torch.zeros_like(center_x) # (num_points, num_obj_all)
+        strides_expand = torch.zeros_like(center_x,requires_grad =False) # (num_points, num_obj_all)
+        strides_expand_for_targets = torch.zeros_like(center_x,requires_grad =False) # (num_points, num_obj_all)
 
         # project the points on current level back to the `original` sizes
         p_start = 0
@@ -533,8 +533,6 @@ class FCOS(nn.Module):
 
         # choose foreground points
         positive_mask = ((labels_flatten >= 0) & (labels_flatten < self.num_classes)).nonzero().reshape(-1)
-        num_positive_points = torch.tensor(len(positive_mask), dtype=torch.float)#, device=reg_outputs_flatten[0].device)
-        num_positive_points = max(num_positive_points, 1.0)
         reg_outputs_flatten = reg_outputs_flatten[positive_mask]
         ctr_logits_flatten = ctr_logits_flatten[positive_mask]
         reg_targets_flatten = reg_targets_flatten[positive_mask]
@@ -570,12 +568,12 @@ class FCOS(nn.Module):
             ctr_loss = nn.functional.binary_cross_entropy_with_logits(ctr_logits_flatten, centerness_targets,reduction='none') 
 
         else:
-            reg_loss = torch.zeros_like(cls_loss)
-            ctr_loss = torch.zeros_like(cls_loss)
+            reg_loss = torch.zeros_like(cls_loss,requires_grad =True)
+            ctr_loss = torch.zeros_like(cls_loss,requires_grad =True)
 
-        cls_loss = cls_loss.sum()/ num_positive_points
-        reg_loss = reg_loss.sum()/ num_positive_points
-        ctr_loss = ctr_loss.sum()/ num_positive_points
+        cls_loss = cls_loss.sum() / max(len(positive_mask), 1.0)
+        reg_loss = reg_loss.sum()/ max(len(positive_mask), 1.0)
+        ctr_loss = ctr_loss.sum()/ max(len(positive_mask), 1.0)
         final_loss = cls_loss + reg_loss + ctr_loss
         
         return {
