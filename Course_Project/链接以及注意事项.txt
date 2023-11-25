@@ -1,0 +1,9 @@
+论文阅读：Fast Single Image Dehazing Using Saturation Based Transmission Map Estimation （color correction-based 去雾）此外还用了Dark Channel Prior作为filter based 以及 EPDN 作为learning based
+https://blog.csdn.net/space_walk/article/details/108422074
+
+UA-DETRAC数据集转YOLO, 已成功train model
+需要注意: train过程中 pytorch 版本不能太高（存疑,不过降版本可以解决问题）
+降低num_workers 解决OSError: [WinError 1455] 页面文件太小，无法完成操作。 （比如num_workers=0 ）
+https://github.com/wy17646051/UA-DETRAC-Format-Converter
+
+
