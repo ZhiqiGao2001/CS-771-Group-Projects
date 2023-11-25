@@ -1,12 +1,14 @@
 from ultralytics import YOLO
 import cv2
 import os
+import torch
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 
 def process_folder(folder_path, output_path, output_type='video'):
     # Load YOLOv8 model
-    model = YOLO('yolov8n.pt')
+    # model = YOLO('models/yolov8x.pt')
+    model = YOLO('models/best.pt')
 
     # Get the first image path for frame size information
     first_image_path = os.path.join(folder_path, os.listdir(folder_path)[0])
@@ -52,7 +54,7 @@ output_path_video = "Test_Output"
 output_path_images = "Test_Output"
 
 # # Process the folder and store the results as a video
-# process_folder(folder_path, output_path_video, output_type='video')
+process_folder(folder_path, output_path_video, output_type='video')
 
 # Process the same folder and store the results as separate image files
 process_folder(folder_path, output_path_images, output_type='images')

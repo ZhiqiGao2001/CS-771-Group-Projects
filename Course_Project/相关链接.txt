@@ -2,3 +2,6 @@ UA-DETRAC数据集转YOLO格式 https://blog.csdn.net/lafsca5/article/details/12
 
 论文阅读：Fast Single Image Dehazing Using Saturation Based Transmission Map Estimation 
 https://blog.csdn.net/space_walk/article/details/108422074
+
+UA-DETRAC数据集转YOLO, 已成功train model 需要注意: train过程中 pytorch 版本不能太高（存疑） num_workers=0 解决OSError: [WinError 1455] 页面文件太小，无法完成操作。
+https://github.com/wy17646051/UA-DETRAC-Format-Converter

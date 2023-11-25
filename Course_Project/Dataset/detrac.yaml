@@ -1,0 +1,7 @@
+path: ../Dataset
+train: images/train
+val: images/val
+test:
+
+nc: 5
+names: ['others', 'car', 'van', 'bus']

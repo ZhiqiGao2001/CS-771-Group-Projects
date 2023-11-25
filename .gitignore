@@ -2,6 +2,7 @@
 .idea/misc.xml
 .idea/Group Projects.iml
 *.zip
+*.pt
 
 assignment2_release/data/images
 assignment2_release/data/objects
@@ -32,4 +33,5 @@ Course_Project/Dataset/UA-DETRAC-Annotations
 Course_Project/Dataset/UA-DETRAC-Annotations-avgAttributes
 Course_Project/Dataset/UA-DETRAC-Annotations-Yolo
 Course_Project/Test_Output
-Course_Project/yolov5x6.pt
+Course_Project/Dataset/labels
+Course_Project/Dataset/images
