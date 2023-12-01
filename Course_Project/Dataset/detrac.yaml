@@ -1,7 +1,7 @@
-path: ../Dataset
+path: ../UA-DETRAC
 train: images/train
 val: images/val
-test:
+test: images/test
 
 nc: 5
 names: ['others', 'car', 'van', 'bus']

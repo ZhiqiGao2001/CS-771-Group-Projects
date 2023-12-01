@@ -41,7 +41,7 @@ def create_video(input_folder, output_file, fps=25/7):
     video.release()
 
 # Example usage:
-folder_path = "Dataset/UA-DETRAC/hazy/train/MVI_20011_229_0.02"
+folder_path = "Dataset/UA-DETRAC/dehaze_DarkChannel/test/MVI_39031_241_0.03"
 output_file = 'Test_Output/test_video.mp4'
 create_video(folder_path, output_file)
 
