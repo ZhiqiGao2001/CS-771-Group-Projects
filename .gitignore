@@ -21,17 +21,5 @@ assignment3_release/data/VOCtrainval_06-Nov-2007.tar
 assignment3_release/data/VOCdevkit
 
 
-Course_Project/Dataset/UA-DETRAC
-Course_Project/Dataset/DETRAC-test-data
-Course_Project/Dataset/DETRAC-train-data
-Course_Project/Dataset/DETRAC-Test-Annotations-XML
-Course_Project/Dataset/DETRAC-Train-Annotations-XML
-Course_Project/Dataset/fog_8_0
-Course_Project/Dataset/fog_8_1
-Course_Project/Dataset/fog_8_2
-Course_Project/Dataset/UA-DETRAC-Annotations
-Course_Project/Dataset/UA-DETRAC-Annotations-avgAttributes
-Course_Project/Dataset/UA-DETRAC-Annotations-Yolo
-Course_Project/Test_Output
-Course_Project/Dataset/labels
-Course_Project/Dataset/images
+Course_Project/Dataset/
+Course_Project/Test_Output/

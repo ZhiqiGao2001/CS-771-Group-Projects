@@ -1,7 +1,0 @@
-path: ../UA-DETRAC
-train: images/train
-val: images/val
-test: images/test
-
-nc: 5
-names: ['others', 'car', 'van', 'bus']

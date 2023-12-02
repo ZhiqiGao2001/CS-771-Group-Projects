@@ -5,10 +5,11 @@ import torch
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 
-def process_folder(folder_path, output_path, output_type='video'):
+def process_folder(folder_path, output_path, output_type='video', video_path='output_video.mp4'):
     # Load YOLOv8 model
-    # model = YOLO('models/yolov8x.pt')
-    model = YOLO('models/best.pt')
+
+    model = YOLO('C:/Users/ZhiQi/OneDrive/桌面/yolov5/runs/detect/train/weights/best.pt')
+    model = YOLO('models/yolov8x.pt')
 
     # Get the first image path for frame size information
     first_image_path = os.path.join(folder_path, os.listdir(folder_path)[0])
@@ -17,7 +18,7 @@ def process_folder(folder_path, output_path, output_type='video'):
 
     # Create VideoWriter object if output_type is video
     if output_type == 'video':
-        output_video_path = os.path.join(output_path, 'output_video.mp4')
+        output_video_path = os.path.join(output_path, video_path)
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(output_video_path, fourcc, 5.0, (width, height))
 
@@ -49,12 +50,12 @@ def process_folder(folder_path, output_path, output_type='video'):
 
 
 # Example usage:
-folder_path = "Dataset/UA-DETRAC/dehaze_DarkChannel/train/MVI_20011_229_0.03"
+folder_path = "Dataset/UA-DETRAC/dehaze_DarkChannel/test/MVI_39031_241_0.02"
 output_path_video = "Test_Output"
 output_path_images = "Test_Output"
 
 # # Process the folder and store the results as a video
-process_folder(folder_path, output_path_video, output_type='video')
+process_folder(folder_path, output_path_video, output_type='video', video_path='output_video1.mp4')
 
 # Process the same folder and store the results as separate image files
 process_folder(folder_path, output_path_images, output_type='images')
