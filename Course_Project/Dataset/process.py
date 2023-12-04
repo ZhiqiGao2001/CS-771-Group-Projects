@@ -94,23 +94,23 @@ def yolo_img_test(opt):
     print('YOLO test set image has been generated.')
 
 
-def gen_yolo_dataset(opt):
-    yolo_img_train_val(opt)
+def gen_yolo_dataset(opt, testonly=False):
+    if not testonly:
+        yolo_img_train_val(opt)
+        os.makedirs(opt.new_folder_path + '/labels/train')
+        os.makedirs(opt.new_folder_path + '/labels/val')
+        for video_xml in tqdm(os.listdir(opt.lbl_train)):
+            if '.xml' in video_xml:
+                create_labels(parse(os.path.join(opt.lbl_train, video_xml)).documentElement,
+                              opt.new_folder_path + '/labels/train/',
+                              img_root=opt.new_folder_path + '/images/train/')
+                create_labels(parse(os.path.join(opt.lbl_train, video_xml)).documentElement,
+                              opt.new_folder_path + '/labels/val/',
+                              img_root=opt.new_folder_path + '/images/val/')
+        print('YOLO training and validation set label has been generated.')
+
     yolo_img_test(opt)
-
-    # train/val label
-    os.makedirs(opt.new_folder_path+'/labels/train')
-    os.makedirs(opt.new_folder_path+'/labels/val')
     os.makedirs(opt.new_folder_path+'/labels/test')
-    for video_xml in tqdm(os.listdir(opt.lbl_train)):
-        if '.xml' in video_xml:
-            create_labels(parse(os.path.join(opt.lbl_train, video_xml)).documentElement, opt.new_folder_path+'/labels/train/',
-                          img_root=opt.new_folder_path+'/images/train/')
-            create_labels(parse(os.path.join(opt.lbl_train, video_xml)).documentElement, opt.new_folder_path+'/labels/val/',
-                          img_root=opt.new_folder_path+'/images/val/')
-    print('YOLO training and validation set label has been generated.')
-
-    # test label
     for video_xml in tqdm(os.listdir(opt.lbl_test)):
         if '.xml' in video_xml:
             create_labels(parse(os.path.join(opt.lbl_test, video_xml)).documentElement, opt.new_folder_path+'/labels/test/',
