@@ -18,6 +18,25 @@ def organize_folders(main_folder_path):
 
     print("Folders organized.")
 
+
+def rename_subfolders(big_folder_path):
+    # Iterate through the subfolders of the big folder
+    for subfolder_name in os.listdir(big_folder_path):
+        subfolder_path = os.path.join(big_folder_path, subfolder_name)
+
+        # Check if it's a directory and the name matches the specified pattern
+        for sub_name in os.listdir(subfolder_path):
+            # Extract the desired part before the second "_"
+            extract_name = sub_name.split("_", 2)[:2]
+            new_name = "_".join(extract_name)
+            os.rename(os.path.join(subfolder_path, sub_name), os.path.join(subfolder_path, new_name))
+            print(f"Renamed '{sub_name}' to '{new_name}'.")
+
+
 # Example usage:
-main_folder_path = "Dataset/UA-DETRAC/hazy/test"
-organize_folders(main_folder_path)
+big_folder_path = "Dataset/UA-DETRAC/dehaze_learning/test"
+rename_subfolders(big_folder_path)
+
+
+# main_folder_path = "Dataset/UA-DETRAC/dehaze_learning/test"
+# organize_folders(main_folder_path)
