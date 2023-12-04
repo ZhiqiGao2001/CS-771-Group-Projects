@@ -1,9 +1,0 @@
-path: C:\Users\ZhiQi\OneDrive\桌面\CS-771-Group-Projects\Course_Project\Dataset\Test1
-train:
-val: images/test
-
-names:
-  0: others
-  1: car
-  2: van
-  3: bus
