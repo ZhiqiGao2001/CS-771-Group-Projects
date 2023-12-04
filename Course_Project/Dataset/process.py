@@ -135,8 +135,15 @@ def parse_opt(new_folder_path, train_path, test_path):
 
 
 if __name__ == "__main__":
-    yolo_folder_path = 'Test1'
-    train_val_path ='UA-DETRAC/gt/train'
-    test_path ='UA-DETRAC/gt/test'
-    opt = parse_opt(new_folder_path=yolo_folder_path, train_path=train_val_path, test_path=test_path)
-    gen_yolo_dataset(opt)
+    for subdir in os.listdir("UA-DETRAC/dehaze_learning/test"):
+        haze_factor = subdir.split("_")[1]
+        yolo_folder_path = f"dehazed_test_set/learning_{haze_factor}"
+        test_path = f"UA-DETRAC/dehaze_learning/test/{subdir}"
+        print(test_path)
+        opt = parse_opt(new_folder_path=yolo_folder_path, train_path=None, test_path=test_path)
+        gen_yolo_dataset(opt, testonly=True)
+    # yolo_folder_path = 'dehazed_test_set/darkchannel_0.005'
+    # train_val_path ='UA-DETRAC/dehaze_DarkChannel/test/folder_0.005'
+    # test_path ='UA-DETRAC/gt/test'
+    # opt = parse_opt(new_folder_path=yolo_folder_path, train_path=train_val_path, test_path=test_path)
+    # gen_yolo_dataset(opt, testonly=True)
