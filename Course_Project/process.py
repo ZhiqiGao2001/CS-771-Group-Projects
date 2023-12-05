@@ -143,8 +143,8 @@ if __name__ == "__main__":
     #     opt = parse_opt(new_folder_path=yolo_folder_path, train_path=None, test_path=test_path)
     #     gen_yolo_dataset(opt, testonly=True)
 
-    yolo_folder_path = 'train_set/hazy_0.03'
-    train_val_path ='UA-DETRAC/hazy/train/folder_0.03'
-    test_path ='UA-DETRAC/gt/test'
+    yolo_folder_path = 'Dataset/train_set/hazy_0.03'
+    train_val_path = 'Dataset/UA-DETRAC/hazy/train/folder_0.03'
+    test_path = 'Dataset/UA-DETRAC/gt/test'
     opt = parse_opt(new_folder_path=yolo_folder_path, train_path=train_val_path, test_path=test_path)
     gen_yolo_dataset(opt)
