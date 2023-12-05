@@ -4,7 +4,7 @@ import shutil
 from xml.dom.minidom import parse
 from tqdm import tqdm
 import random
-
+import numpy as np
 
 def create_labels(root_node, labels_root, img_root):
     img_w = 960
@@ -55,16 +55,19 @@ def create_labels(root_node, labels_root, img_root):
                     f.write(i + '\n')
 
 
-def yolo_img_train_val(opt):
+def yolo_img_train_val(opt, result_array):
     # train img
     os.makedirs(opt.new_folder_path+'/images/train')
     os.makedirs(opt.new_folder_path+'/images/val')
     train_images = []  # List to store paths of images for training
+    i=0
     for video_name in tqdm(os.listdir(opt.img_train)):
         if 'MVI' in video_name:
             for img_name in os.listdir(os.path.join(opt.img_train, video_name)):
                 if '.jpg' in img_name:
-                    ori_path = os.path.join(opt.img_train, video_name, img_name)
+                    # ori_path = os.path.join(opt.img_train, video_name, img_name)
+                    ori_path = os.path.join(result_array[i], video_name, img_name)
+                    i+=1
                     new_path = os.path.join(opt.new_folder_path+'/images/train/', video_name + '_' + img_name)
                     shutil.copyfile(ori_path, new_path)
                     train_images.append(new_path)
@@ -94,9 +97,9 @@ def yolo_img_test(opt):
     print('YOLO test set image has been generated.')
 
 
-def gen_yolo_dataset(opt, testonly=False):
+def gen_yolo_dataset(opt,  result_array, testonly=False):
     if not testonly:
-        yolo_img_train_val(opt)
+        yolo_img_train_val(opt, result_array)
         os.makedirs(opt.new_folder_path + '/labels/train')
         os.makedirs(opt.new_folder_path + '/labels/val')
         for video_xml in tqdm(os.listdir(opt.lbl_train)):
@@ -125,8 +128,8 @@ def parse_opt(new_folder_path, train_path, test_path):
     parser.add_argument('--new_folder_path', type=str, default=new_folder_path, help='new folder path')
     parser.add_argument('--img_train', type=str, default=train_path, help='train images path')
     parser.add_argument('--img_test', type=str, default=test_path, help='validation images path')
-    parser.add_argument('--lbl_train', type=str, default='UA-DETRAC-Annotations/train', help='train labels path')
-    parser.add_argument('--lbl_test', type=str, default='UA-DETRAC-Annotations/test', help='validation labels path')
+    parser.add_argument('--lbl_train', type=str, default='Dataset/UA-DETRAC-Annotations/train', help='train labels path')
+    parser.add_argument('--lbl_test', type=str, default='Dataset/UA-DETRAC-Annotations/test', help='validation labels path')
     if os.path.exists(new_folder_path):
         shutil.rmtree(new_folder_path)
     os.makedirs(new_folder_path)
@@ -143,8 +146,17 @@ if __name__ == "__main__":
     #     opt = parse_opt(new_folder_path=yolo_folder_path, train_path=None, test_path=test_path)
     #     gen_yolo_dataset(opt, testonly=True)
 
-    yolo_folder_path = 'Dataset/train_set/hazy_0.03'
+    yolo_folder_path = 'Dataset/train_set/hazy_mixed'
     train_val_path = 'Dataset/UA-DETRAC/hazy/train/folder_0.03'
     test_path = 'Dataset/UA-DETRAC/gt/test'
+
+    all_path = ['Dataset/UA-DETRAC/hazy/train/folder_0.03', 'Dataset/UA-DETRAC/hazy/train/folder_0.02',
+                'Dataset/UA-DETRAC/hazy/train/folder_0.01', 'Dataset/UA-DETRAC/hazy/train/folder_0.005',
+                'Dataset/UA-DETRAC/gt/train']
+    percentage = [0.2, 0.2, 0.2, 0.2, 0.2]
+    length = 5250
+    # Create an array with given probabilities
+    random_indices = np.random.choice(len(all_path), length, p=percentage)
+    result_array = np.array(all_path)[random_indices]
     opt = parse_opt(new_folder_path=yolo_folder_path, train_path=train_val_path, test_path=test_path)
-    gen_yolo_dataset(opt)
+    gen_yolo_dataset(opt, result_array=result_array)
