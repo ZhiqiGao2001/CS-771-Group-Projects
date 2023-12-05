@@ -33,10 +33,8 @@ def rename_subfolders(big_folder_path):
             print(f"Renamed '{sub_name}' to '{new_name}'.")
 
 
-# Example usage:
-# big_folder_path = "Dataset/UA-DETRAC/dehaze_ColorCorrection/test"
-# rename_subfolders(big_folder_path)
-
-
-# main_folder_path = "Dataset/UA-DETRAC/dehaze_learning/test"
+# main_folder_path = "Dataset/UA-DETRAC/hazy/train"
 # organize_folders(main_folder_path)
+
+# big_folder_path = "Dataset/UA-DETRAC/hazy/train"
+# rename_subfolders(big_folder_path)
