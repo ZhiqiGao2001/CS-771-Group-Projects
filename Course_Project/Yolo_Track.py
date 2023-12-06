@@ -4,13 +4,13 @@ import os
 import torch
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
+# model = YOLO(
+#     "C:/Users/ZhiQi/OneDrive - UW-Madison/Desktop/result/detect/yolov8m_mixed/train/weights/best.pt")
+
+
+model = YOLO('models/yolov8m.pt')
 
 def process_folder(folder_path, output_path, output_type='video', video_path='output_video.mp4'):
-    # Load YOLOv8 model
-
-    model = YOLO('C:/Users/ZhiQi/OneDrive/桌面/yolov5/runs/detect/train/weights/best.pt')
-    model = YOLO('models/yolov8x.pt')
-
     # Get the first image path for frame size information
     first_image_path = os.path.join(folder_path, os.listdir(folder_path)[0])
     first_frame = cv2.imread(first_image_path)
@@ -50,7 +50,7 @@ def process_folder(folder_path, output_path, output_type='video', video_path='ou
 
 
 # Example usage:
-folder_path = "Dataset/UA-DETRAC/dehaze_DarkChannel/test/MVI_39031_241_0.02"
+folder_path = "Dataset/UA-DETRAC/gt/test/MVI_39031"
 output_path_video = "Test_Output"
 output_path_images = "Test_Output"
 

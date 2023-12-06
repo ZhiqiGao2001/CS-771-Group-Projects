@@ -1,0 +1,4 @@
+output_folder: "../logs"
+dataset:
+  name: "MNIST"
+  data_folder: "../data"

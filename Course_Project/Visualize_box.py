@@ -38,20 +38,13 @@ def visualize_boxes(xml_file, image_path, frame_interval):
 
                 # Add object_id and vehicle_type to the plot
                 plt.text(left, top - 5, f"ID: {object_id}, Type: {target.find('attribute').get('vehicle_type')}", color='r')
-
-            plt.show()
-
-        # Remove the break statement if you want to visualize all frames
-        if frame_counter == 5:  # Change 5 to the number of times you want to execute the loop
-            break
+            plt.savefig(f"Test_Output_off/MVI_39031_{frame.get('num')}.png")
+            plt.close()
 
 # Example usage
-xml_file = 'Dataset/DETRAC-Test-Annotations-XML/MVI_39031.xml'
 
-image_path = 'Dataset/DETRAC-test-data/Insight-MVT_Annotation_Test/MVI_39031'
-
-xml_file_modify = 'Dataset/UA-DETRAC-Annotations/train/MVI_20011.xml'
-image_path_modify = 'Dataset/UA-DETRAC/gt/train/MVI_20011'
+xml_file_modify = 'Dataset/UA-DETRAC-Annotations/test/MVI_39031.xml'
+image_path_modify = 'Dataset/UA-DETRAC/gt/test/MVI_39031'
 # visualize_boxes(xml_file, image_path, frame_interval=50)
-visualize_boxes(xml_file_modify, image_path_modify, frame_interval=7)
+visualize_boxes(xml_file_modify, image_path_modify, frame_interval=10)
 

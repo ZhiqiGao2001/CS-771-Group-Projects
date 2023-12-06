@@ -16,5 +16,5 @@ def rename_files(base_folder, file_name):
                 # print(f"Renamed: {old_path} to {new_path}")
 
 # Replace 'path/to/your/folder' with the actual path to your main folder
-folder_path = 'C:/Users/ZhiQi/OneDrive/桌面/yolov5/runs/detect/yolov8m_gt'
+folder_path = 'C:/Users/ZhiQi/OneDrive - UW-Madison/Desktop/result/detect/yolov8m_0.005'
 rename_files(folder_path, "confusion_matrix_normalized.png")
