@@ -19,7 +19,7 @@ import numpy as np
 
 """
 
-def create_video(input_folder, output_file, fps=25/7):
+def create_video(input_folder, output_file):
     image_path = os.path.join(input_folder, os.listdir(input_folder)[0])
     image = cv2.imread(image_path)
     image_info = image.shape

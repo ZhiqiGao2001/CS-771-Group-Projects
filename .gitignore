@@ -3,6 +3,7 @@
 .idea/Group Projects.iml
 *.zip
 *.pt
+*.mp4
 
 assignment2_release/data/images
 assignment2_release/data/objects

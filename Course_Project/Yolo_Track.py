@@ -14,7 +14,7 @@ def process_folder(folder_path, output_path, output_type='video', video_path='ou
     if output_type == 'video':
         output_video_path = os.path.join(output_path, video_path)
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(output_video_path, fourcc, 5.0, (width, height))
+        out = cv2.VideoWriter(output_video_path, fourcc, 2.5, (width, height))
 
     # Process each image in the folder
     for file_name in os.listdir(folder_path):

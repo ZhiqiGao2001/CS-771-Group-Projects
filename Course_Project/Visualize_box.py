@@ -38,7 +38,7 @@ def visualize_boxes(xml_file, image_path, frame_interval):
 
                 # Add object_id and vehicle_type to the plot
                 plt.text(left, top - 5, f"ID: {object_id}, Type: {target.find('attribute').get('vehicle_type')}", color='r')
-            plt.savefig(f"Test_Output_off/MVI_39031_{frame.get('num')}.png")
+            plt.savefig(f"Test_Output/MVI_39031_{frame.get('num')}.png")
             plt.close()
 
 # Example usage
