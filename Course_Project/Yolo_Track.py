@@ -4,12 +4,6 @@ import os
 import torch
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-# model = YOLO(
-#     "C:/Users/ZhiQi/OneDrive - UW-Madison/Desktop/result/detect/yolov8m_mixed/train/weights/best.pt")
-
-
-model = YOLO('models/yolov8m.pt')
-
 def process_folder(folder_path, output_path, output_type='video', video_path='output_video.mp4'):
     # Get the first image path for frame size information
     first_image_path = os.path.join(folder_path, os.listdir(folder_path)[0])
@@ -49,14 +43,27 @@ def process_folder(folder_path, output_path, output_type='video', video_path='ou
         print("Images have been saved successfully.")
 
 
-# Example usage:
-folder_path = "Dataset/UA-DETRAC/gt/test/MVI_39031"
-output_path_video = "Test_Output"
-output_path_images = "Test_Output"
+model = YOLO('models/yolov8m.pt')
+folder_path = "Dataset/UA-DETRAC/dehaze_DarkChannel/test/MVI_39031_241_0.03"
+output_path_video = "Test_Output_original"
+output_path_images = "Test_Output_original"
+
+os.makedirs(output_path_video, exist_ok=True)
 
 # # Process the folder and store the results as a video
 process_folder(folder_path, output_path_video, output_type='video', video_path='output_video1.mp4')
 
 # Process the same folder and store the results as separate image files
-process_folder(folder_path, output_path_images, output_type='images')
+# process_folder(folder_path, output_path_images, output_type='images')
 
+model = YOLO(
+    "C:/Users/ZhiQi/OneDrive - UW-Madison/Desktop/result/detect/yolov8m_mixed/train/weights/best.pt")
+output_path_video = "Test_Output_trained"
+output_path_images = "Test_Output_trained"
+
+os.makedirs(output_path_video, exist_ok=True)
+# # Process the folder and store the results as a video
+process_folder(folder_path, output_path_video, output_type='video', video_path='output_video1.mp4')
+
+# Process the same folder and store the results as separate image files
+# process_folder(folder_path, output_path_images, output_type='images')
